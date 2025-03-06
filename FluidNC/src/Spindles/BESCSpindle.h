@@ -31,11 +31,7 @@ namespace Spindles {
     private:
         // Fixed
         static constexpr uint32_t besc_pwm_min_freq = 50;    // 50 Hz
-        static constexpr uint32_t besc_pwm_max_freq = 2000;  // 50 Hz
-
-        // Calculated
-        uint32_t _pulse_span_counts;  // In counts of a 32-bit counter. ESP32 uses up to 20bits
-        uint32_t _min_pulse_counts;   // In counts of a 32-bit counter  ESP32 uses up to 20bits
+        static constexpr uint32_t besc_pwm_max_freq = 2000;  // 2000 Hz
 
     protected:
         // Configurable
@@ -52,8 +48,6 @@ namespace Spindles {
 
         void init() override;
         void config_message() override;
-
-        void set_output(uint32_t duty) override;
 
         // Configuration handlers:
         void validate() override { PWM::validate(); }

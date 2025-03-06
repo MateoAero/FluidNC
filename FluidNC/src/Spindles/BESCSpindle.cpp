@@ -39,48 +39,26 @@ namespace Spindles {
 
         _enable_pin.setAttr(Pin::Attr::Output);
 
-        // BESC PWM typically represents 0 speed as a 1ms pulse and max speed as a 2ms pulse
-
-        // 1000000 is us/sec
-        const uint32_t pulse_period_us = 1000000 / _pwm->frequency();
-
-        // Calculate the pulse length offset and scaler in counts of the PWM controller
-        _min_pulse_counts  = (_min_pulse_us * _pwm->period()) / pulse_period_us;
-        _pulse_span_counts = ((_max_pulse_us - _min_pulse_us) * _pwm->period()) / pulse_period_us;
-
         if (_speeds.size() == 0) {
-            shelfSpeeds(4000, 20000);
+            // BESC PWM typically represents 0 speed as a 1ms pulse and max speed as a 2ms pulse
+
+            // 1000000 is us/sec
+            const uint32_t pulse_period_us = 1000000 / _pwm_freq;
+
+            // Calculate the pulse length offset and scaler in counts of the PWM controller
+            float min_percent = 100.0f * _min_pulse_us / pulse_period_us;
+            float max_percent = 100.0f * _max_pulse_us / pulse_period_us;
+
+            _speeds.clear();
+            _speeds.push_back({ 0, min_percent });
+            _speeds.push_back({ 255, max_percent });
         }
 
         // Use yaml speed_map to setup speed map for "spindle speed" conversion to timer counts used by PWM controller
-        //setupSpeeds(_pulse_span_counts); // Map the counts for just the part of the pulse that changes to keep math inside 32bits later...
         setupSpeeds(_pwm->period());  // Map the entire pulse width period in counts
         stop();
         init_atc();
         config_message();
-    }
-
-    void IRAM_ATTR BESC::set_output(uint32_t duty) {
-        if (_output_pin.undefined()) {
-            return;
-        }
-
-        // to prevent excessive calls to pwmSetDuty, make sure duty has changed
-        if (duty == _current_pwm_duty) {
-            return;
-        }
-
-        _current_pwm_duty = duty;
-
-        // This maps the dev_speed range of 0..(1<<_pwm_precision) into the pulse length
-        // where _min_pulse_counts represents off and (_min_pulse_counts + _pulse_span_counts)
-        // represents full on.  Typically the off value is a 1ms pulse length and the
-        // full on value is a 2ms pulse.
-        // uint32_t pulse_counts = _min_pulse_counts + (_pulse_span_counts * (uint64_t) duty)/_pwm->period();
-        _pwm->setDuty(_min_pulse_counts + (_pulse_span_counts * (uint64_t)duty) / _pwm->period());
-        // _pwm->setDuty(_min_pulse_counts+duty); // More efficient by keeping math within 32bits??
-        // log_info(name() << " duty:" << duty << " _min_pulse_counts:" << _min_pulse_counts
-        //                 << " _pulse_span_counts:" << _pulse_span_counts << " pulse_counts" << pulse_counts);
     }
 
     // prints the startup message of the spindle config
