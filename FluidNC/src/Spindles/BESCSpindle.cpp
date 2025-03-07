@@ -45,6 +45,9 @@ namespace Spindles {
             // 1000000 is us/sec
             const uint32_t pulse_period_us = 1000000 / _pwm_freq;
 
+            Assert(_min_pulse_us < _max_pulse_us, "min_pulse_us is greater than _max_pulse_us");
+            Assert(_min_pulse_us < pulse_period_us, "min_pulse_us is too long for _pwm_hz");
+
             // Calculate the pulse length offset and scaler in counts of the PWM controller
             float min_percent = 100.0f * _min_pulse_us / pulse_period_us;
             float max_percent = 100.0f * _max_pulse_us / pulse_period_us;
